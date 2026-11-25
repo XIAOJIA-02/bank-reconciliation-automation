@@ -1,0 +1,33 @@
+date,je_id,reference,description,debit,credit
+2026-10-01,JE0001,PV-2610-001,Office rent - October,,12800.00
+2026-10-02,JE0002,RV-2610-001,Mgmt fee Sep - Harbour Global Equity Fund,48215.30,
+2026-10-02,JE0003,RV-2610-002,Mgmt fee Sep - Harbour Income Fund,21664.85,
+2026-10-05,JE0004,CHQ100231,Cheque 100231 - Brightline Office Supplies,,486.20
+2026-10-06,JE0005,CHQ100232,Cheque 100232 - Keystone Cleaning Services,,1150.00
+2026-10-08,JE0006,PV-2610-002,IT managed services - Nimbustech (Oct),,4500.00
+2026-10-08,JE0007,PV-2610-003,Market data subscription - Dataquill,,3960.00
+2026-10-09,JE0008,CHQ100233,Cheque 100233 - Redwood Legal LLP,,7420.00
+2026-10-12,JE0009,RV-2610-003,Advisory fee - Client Pinecrest Family Office,15000.00,
+2026-10-13,JE0010,CHQ100234,Cheque 100234 - Lumen Courier,,268.40
+2026-10-14,JE0011,RV-2610-004,Advisory fee cheque - Client Orchard Trust,3850.00,
+2026-10-15,JE0012,CHQ100235,Cheque 100235 - Summit Training Academy,,2200.00
+2026-10-15,JE0013,PV-2610-004,Utilities - October,,642.35
+2026-10-16,JE0014,RV-2610-005,Performance fee Q3 - Harbour Global Equity Fund,96480.00,
+2026-10-19,JE0015,PV-2610-005,Fund admin fee - Coastal Fund Services,,8750.00
+2026-10-19,JE0016,CHQ100236,Cheque 100236 - Keystone Cleaning Services,,1530.00
+2026-10-20,JE0017,CHQ100237,Cheque 100237 - Atlas Printing,,930.00
+2026-10-20,JE0018,CHQ100239,Cheque 100239 - Vantage Event Management,,3120.00
+2026-10-21,JE0019,PV-2610-006,Professional indemnity insurance top-up,,5310.00
+2026-10-22,JE0020,PV-2610-007,IT project milestone - Nimbustech,,4500.00
+2026-10-23,JE0021,CHQ100238,Cheque 100238 - Brightline Office Supplies,,312.75
+2026-10-26,JE0022,RV-2610-006,Advisory fee - Client Pinecrest Family Office,15000.00,
+2026-10-27,JE0023,PV-2610-008,Payroll - October,,68450.00
+2026-10-27,JE0024,PV-2610-009,Employer CPF contributions - October,,11942.60
+2026-10-28,JE0025,PV-2610-010,Audit fee interim billing,,9800.00
+2026-10-29,JE0026,PV-2610-011,Cloud software - CloudSoft annual licence,,2400.00
+2026-10-29,JE0027,PV-2610-011,Cloud software - CloudSoft annual licence,,2400.00
+2026-10-29,JE0028,CHQ100245,Cheque 100245 - Redwood Legal LLP,,6800.00
+2026-10-30,JE0029,RV-2610-007,Mgmt fee Oct (in advance) - Harbour Income Fund,22105.40,
+2026-10-30,JE0030,CHQ100246,Cheque 100246 - Atlas Printing,,1275.00
+2026-10-31,JE0031,RV-2610-008,Advisory fee cheque - Client Orchard Trust,12500.00,
+2026-10-31,JE0032,RV-2610-009,Advisory fee - Client Tanjong Holdings,8000.00,

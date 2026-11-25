@@ -1,0 +1,27 @@
+je_id,gl_date,gl_reference,gl_description,gl_amount,bank_ref,bank_date,bank_description,bank_amount,difference,days_apart,match_method
+JE0004,2026-10-05,CHQ100231,Cheque 100231 - Brightline Office Supplies,-486.2,BK2610-0004,2026-10-07,CHEQUE 100231,-486.2,0.0,2,1 - Cheque no. + amount
+JE0005,2026-10-06,CHQ100232,Cheque 100232 - Keystone Cleaning Services,-1150.0,BK2610-0005,2026-10-08,CHEQUE 100232,-1150.0,0.0,2,1 - Cheque no. + amount
+JE0008,2026-10-09,CHQ100233,Cheque 100233 - Redwood Legal LLP,-7420.0,BK2610-0009,2026-10-12,CHEQUE 100233,-7420.0,0.0,3,1 - Cheque no. + amount
+JE0010,2026-10-13,CHQ100234,Cheque 100234 - Lumen Courier,-268.4,BK2610-0012,2026-10-15,CHEQUE 100234,-268.4,0.0,2,1 - Cheque no. + amount
+JE0012,2026-10-15,CHQ100235,Cheque 100235 - Summit Training Academy,-2200.0,BK2610-0014,2026-10-16,CHEQUE 100235,-2200.0,0.0,1,1 - Cheque no. + amount
+JE0017,2026-10-20,CHQ100237,Cheque 100237 - Atlas Printing,-930.0,BK2610-0021,2026-10-22,CHEQUE 100237,-930.0,0.0,2,1 - Cheque no. + amount
+JE0021,2026-10-23,CHQ100238,Cheque 100238 - Brightline Office Supplies,-312.75,BK2610-0024,2026-10-26,CHEQUE 100238,-312.75,0.0,3,1 - Cheque no. + amount
+JE0001,2026-10-01,PV-2610-001,Office rent - October,-12800.0,BK2610-0001,2026-10-01,GIRO HARBOURVIEW PROPERTY PL RENT OCT,-12800.0,0.0,0,2 - Amount + date window
+JE0002,2026-10-02,RV-2610-001,Mgmt fee Sep - Harbour Global Equity Fund,48215.3,BK2610-0002,2026-10-02,INWARD TT HARBOUR GLOBAL EQ FD MGT FEE,48215.3,0.0,0,2 - Amount + date window
+JE0003,2026-10-02,RV-2610-002,Mgmt fee Sep - Harbour Income Fund,21664.85,BK2610-0003,2026-10-02,INWARD TT HARBOUR INCOME FD MGT FEE,21664.85,0.0,0,2 - Amount + date window
+JE0006,2026-10-08,PV-2610-002,IT managed services - Nimbustech (Oct),-4500.0,BK2610-0006,2026-10-08,TT NIMBUSTECH SOLUTIONS PL,-4500.0,0.0,0,2 - Amount + date window
+JE0007,2026-10-08,PV-2610-003,Market data subscription - Dataquill,-3960.0,BK2610-0007,2026-10-08,TT DATAQUILL ANALYTICS,-3960.0,0.0,0,2 - Amount + date window
+JE0009,2026-10-12,RV-2610-003,Advisory fee - Client Pinecrest Family Office,15000.0,BK2610-0010,2026-10-12,INWARD TT PINECREST FO ADVISORY,15000.0,0.0,0,2 - Amount + date window
+JE0011,2026-10-14,RV-2610-004,Advisory fee cheque - Client Orchard Trust,3850.0,BK2610-0011,2026-10-14,CHEQUE DEPOSIT,3850.0,0.0,0,2 - Amount + date window
+JE0013,2026-10-15,PV-2610-004,Utilities - October,-642.35,BK2610-0013,2026-10-15,GIRO CITY UTILITIES,-642.35,0.0,0,2 - Amount + date window
+JE0014,2026-10-16,RV-2610-005,Performance fee Q3 - Harbour Global Equity Fund,96480.0,BK2610-0015,2026-10-16,INWARD TT HARBOUR GLOBAL EQ FD PERF FEE,96480.0,0.0,0,2 - Amount + date window
+JE0015,2026-10-19,PV-2610-005,Fund admin fee - Coastal Fund Services,-8750.0,BK2610-0016,2026-10-19,TT COASTAL FUND SERVICES,-8750.0,0.0,0,2 - Amount + date window
+JE0019,2026-10-21,PV-2610-006,Professional indemnity insurance top-up,-5310.0,BK2610-0018,2026-10-21,TT MERIDIAN INSURANCE BROKERS,-5310.0,0.0,0,2 - Amount + date window
+JE0020,2026-10-22,PV-2610-007,IT project milestone - Nimbustech,-4500.0,BK2610-0022,2026-10-22,TT NIMBUSTECH SOLUTIONS PL,-4500.0,0.0,0,2 - Amount + date window
+JE0022,2026-10-26,RV-2610-006,Advisory fee - Client Pinecrest Family Office,15000.0,BK2610-0025,2026-10-26,INWARD TT PINECREST FO ADVISORY,15000.0,0.0,0,2 - Amount + date window
+JE0024,2026-10-27,PV-2610-009,Employer CPF contributions - October,-11942.6,BK2610-0028,2026-10-27,GIRO CPF CONTRIBUTION,-11942.6,0.0,0,2 - Amount + date window
+JE0023,2026-10-27,PV-2610-008,Payroll - October,-68450.0,BK2610-0027,2026-10-27,GIRO PAYROLL OCT 2026,-68450.0,0.0,0,2 - Amount + date window
+JE0025,2026-10-28,PV-2610-010,Audit fee interim billing,-9800.0,BK2610-0029,2026-10-28,TT NORTHGATE ASSURANCE PAC,-9800.0,0.0,0,2 - Amount + date window
+JE0026,2026-10-29,PV-2610-011,Cloud software - CloudSoft annual licence,-2400.0,BK2610-0031,2026-10-29,TT CLOUDSOFT PTE LTD,-2400.0,0.0,0,2 - Amount + date window
+JE0029,2026-10-30,RV-2610-007,Mgmt fee Oct (in advance) - Harbour Income Fund,22105.4,BK2610-0032,2026-10-30,INWARD TT HARBOUR INCOME FD MGT FEE,22105.4,0.0,0,2 - Amount + date window
+JE0016,2026-10-19,CHQ100236,Cheque 100236 - Keystone Cleaning Services,-1530.0,BK2610-0019,2026-10-21,CHEQUE 100236,-1350.0,180.0,2,3 - Cheque no. only (AMOUNT MISMATCH)
