@@ -58,30 +58,70 @@ class ReconResult:
 # ---------------------------------------------------------------------------
 # 1. Load
 # ---------------------------------------------------------------------------
-def _num(series: pd.Series) -> pd.Series:
-    return pd.to_numeric(series, errors="coerce").fillna(0.0)
+class InputDataError(ValueError):
+    """Raised when a source file is incomplete or malformed. Bad data stops the run
+    instead of producing a reconciliation that looks clean but is wrong."""
+
+
+def _check_columns(df: pd.DataFrame, required: list, name: str) -> None:
+    missing = [c for c in required if c not in df.columns]
+    if missing:
+        raise InputDataError(f"{name}: missing column(s) {missing}")
+
+
+def _dates(series: pd.Series, name: str) -> pd.Series:
+    parsed = pd.to_datetime(series, errors="coerce", format="%Y-%m-%d")
+    bad = series[parsed.isna()]
+    if not bad.empty:
+        raise InputDataError(f"{name}: invalid or missing date(s) {list(bad)[:3]} (expected YYYY-MM-DD)")
+    return parsed
+
+
+def _num(series: pd.Series, name: str) -> pd.Series:
+    """Blank cells are zero; anything else must be a valid number."""
+    cleaned = series.fillna("").astype(str).str.replace(",", "", regex=False).str.strip()
+    parsed = pd.to_numeric(cleaned.replace("", "0"), errors="coerce")
+    bad = series[parsed.isna()]
+    if not bad.empty:
+        raise InputDataError(f"{name}: non-numeric amount(s) {list(bad)[:3]}")
+    if (parsed < 0).any():
+        raise InputDataError(f"{name}: negative amounts are not allowed; use the opposite column instead")
+    return parsed
 
 
 def cheque_no(text: str) -> str:
-    """Return the 6-digit cheque number found in a reference/description, if any."""
+    """Return the 6-digit cheque number found in a reference/description ("" if none)."""
     m = CHEQUE_RE.search(str(text))
     return m.group(1) if m else ""
 
 
 def load_gl(path: Path) -> pd.DataFrame:
     gl = pd.read_csv(path, dtype=str)
-    gl["date"] = pd.to_datetime(gl["date"])
-    gl["amount"] = (_num(gl["debit"]) - _num(gl["credit"])).round(2)
-    gl["cheque_no"] = gl["reference"].map(cheque_no).fillna("")
+    _check_columns(gl, ["date", "je_id", "reference", "description", "debit", "credit"], "General ledger")
+    if gl["je_id"].duplicated().any():
+        raise InputDataError(f"General ledger: duplicate je_id {list(gl.loc[gl['je_id'].duplicated(), 'je_id'])}")
+    gl["date"] = _dates(gl["date"], "General ledger")
+    debit, credit = _num(gl["debit"], "General ledger debit"), _num(gl["credit"], "General ledger credit")
+    both = (debit > 0) & (credit > 0)
+    if both.any():
+        raise InputDataError(f"General ledger: line(s) with both debit and credit {list(gl.loc[both, 'je_id'])}")
+    gl["amount"] = (debit - credit).round(2)
+    gl["cheque_no"] = gl["reference"].map(cheque_no)
     return gl
 
 
 def load_bank(path: Path) -> pd.DataFrame:
     bank = pd.read_csv(path, dtype=str)
-    bank["date"] = pd.to_datetime(bank["date"])
-    bank["amount"] = (_num(bank["deposit"]) - _num(bank["withdrawal"])).round(2)
-    bank["balance"] = _num(bank["balance"])
-    bank["cheque_no"] = bank["description"].map(cheque_no).fillna("")
+    _check_columns(bank, ["date", "bank_ref", "description", "withdrawal", "deposit", "balance"], "Bank statement")
+    if bank["bank_ref"].duplicated().any():
+        raise InputDataError(f"Bank statement: duplicate bank_ref {list(bank.loc[bank['bank_ref'].duplicated(), 'bank_ref'])}")
+    bank["date"] = _dates(bank["date"], "Bank statement")
+    out, inn = _num(bank["withdrawal"], "Bank withdrawal"), _num(bank["deposit"], "Bank deposit")
+    bank["amount"] = (inn - out).round(2)
+    bank["balance"] = pd.to_numeric(bank["balance"].str.replace(",", "", regex=False), errors="coerce")
+    if bank["balance"].isna().any():
+        raise InputDataError("Bank statement: missing or non-numeric running balance")
+    bank["cheque_no"] = bank["description"].map(cheque_no)
     return bank
 
 
@@ -178,7 +218,7 @@ def classify(gl, bank, next_bank, matches, duplicates, config, threshold) -> tup
 
     def add(source, ref_id, date, reference, description, amount, category, side, effect,
             aje, action, priority, cleared_on=None):
-        # Large items are escalated, except timing differences already proven by subsequent clearance
+        # Large items are escalated, except timing differences already supported by subsequent clearance
         if abs(amount) >= threshold and priority != "High" and cleared_on is None:
             priority = "High"
             action += f" Amount >= threshold ({threshold:,.0f})."
@@ -217,6 +257,8 @@ def classify(gl, bank, next_bank, matches, duplicates, config, threshold) -> tup
         if hit is not None:
             used_next.add(hit["bank_ref"])
         days_after = (cleared_on - period_end).days if cleared_on is not None else None
+        basis = ("Cheque number + amount" if g["cheque_no"] else "Amount + direction only (preliminary)")
+        verify = "" if g["cheque_no"] else " Amount match only - agree to deposit slip / remittance advice before concluding."
 
         if g["amount"] > 0:
             category = "Deposit in transit"
@@ -226,14 +268,14 @@ def classify(gl, bank, next_bank, matches, duplicates, config, threshold) -> tup
                 action, priority = (f"Banked {days_after} days after period end - cut-off risk; inspect remittance "
                                     "and confirm receipt belongs to October."), "High"
             else:
-                action, priority = f"Cleared {cleared_on:%d %b %Y} - timing difference only.", "Low"
+                action, priority = f"Cleared {cleared_on:%d %b %Y} - timing difference.{verify}", "Low"
         else:
             category = "Outstanding cheque" if g["cheque_no"] else "Unpresented payment"
             if cleared_on is None:
                 action, priority = ("Not presented by end of subsequent period - confirm with payee; "
                                     "consider whether cheque is lost, void or should be written back."), "High"
             else:
-                action, priority = f"Cleared {cleared_on:%d %b %Y} - timing difference only.", "Low"
+                action, priority = f"Cleared {cleared_on:%d %b %Y} - timing difference.{verify}", "Low"
 
         add("GL", g["je_id"], g["date"], g["reference"], g["description"], g["amount"],
             category, BANK_SIDE, g["amount"], "No entry - timing difference", action, priority, cleared_on)
@@ -242,6 +284,7 @@ def classify(gl, bank, next_bank, matches, duplicates, config, threshold) -> tup
             "gl_date": g["date"], "amount": g["amount"], "category": category,
             "cleared_on": cleared_on, "cleared_bank_ref": hit["bank_ref"] if hit is not None else None,
             "days_after_period_end": days_after, "status": "Cleared" if cleared_on is not None else "NOT CLEARED",
+            "evidence_basis": basis if cleared_on is not None else "",
         })
 
     # (c) Unmatched bank lines
@@ -249,9 +292,12 @@ def classify(gl, bank, next_bank, matches, duplicates, config, threshold) -> tup
         desc, amt = b["description"].upper(), b["amount"]
         if b["cheque_no"] and not (lo <= int(b["cheque_no"]) <= hi):
             add("Bank", b["bank_ref"], b["date"], b["bank_ref"], b["description"], amt,
-                "Bank error / unauthorised cheque", BANK_SIDE, -amt, "No book entry - bank to reverse",
-                f"Cheque {b['cheque_no']} is outside the company's cheque book ({lo}-{hi}). "
-                "Request cheque image, notify bank, escalate as potential fraud.", "High")
+                "Unverified cheque - outside cheque book", BANK_SIDE, -amt,
+                "No entry yet - provisional bank-side item",
+                f"PROVISIONAL. Cheque {b['cheque_no']} is outside the entity's cheque book ({lo}-{hi}). This alone does "
+                "not prove a bank error or fraud. Obtain the cheque image, the cheque register and the bank's written "
+                "response. If the bank confirms an error, it reverses the debit; if the cheque is genuine, record it "
+                "in the books instead; if unauthorised, escalate as potential fraud.", "High")
         elif b["cheque_no"]:
             add("Bank", b["bank_ref"], b["date"], b["bank_ref"], b["description"], amt,
                 "Unrecorded cheque", BOOK_SIDE, amt, f"Dr Expense/Payable {abs(amt):,.2f} / Cr Bank {abs(amt):,.2f}",
@@ -308,6 +354,8 @@ def build_summary(gl, bank, exceptions, config) -> dict:
         "gl_lines": len(gl), "bank_lines": len(bank),
         "by_category": exceptions.groupby("category")["recon_effect"].agg(["count", "sum"]).round(2).to_dict("index"),
         "high_priority_items": int((exceptions["priority"] == "High").sum()),
+        # Arithmetic reconciliation is not the same as an audit conclusion: High items stay open until evidenced
+        "open_items": int((exceptions["priority"] == "High").sum()),
     }
 
 

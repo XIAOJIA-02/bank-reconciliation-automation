@@ -10,7 +10,7 @@ A Python tool that reconciles a company's cash book (general ledger) to its bank
 
 ## Why I built this
 
-During my accounting internship I reconciled bank records to ledger entries by hand. The work was mostly matching lines, and the judgement was in the few items that didn't match. This project automates the matching so attention goes to the exceptions, and it adds the audit procedures I studied (subsequent clearance, cut-off, escalation by threshold) on top of a basic reconciliation.
+In my accounting internship I supported bookkeeping by checking invoices, bank records and ledger entries, and I saw that most of the effort goes into matching while the judgement sits in the few items that don't match. This project automates the matching so attention goes to the exceptions, and it adds audit procedures from my studies (subsequent clearance, cut-off review, escalation by threshold) on top of a basic reconciliation. The data and the scenario are simulated.
 
 ## What it does
 
@@ -20,9 +20,10 @@ During my accounting internship I reconciled bank records to ledger entries by h
 | 2. Duplicate check | Flags GL postings with the same reference and amount | Catches double-recorded payments |
 | 3. Match | Three passes (below) pair GL lines with bank lines one-to-one | Most lines clear automatically |
 | 4. Classify | Every unmatched line is assigned a category, the side to adjust (bank or book), a proposed entry and a follow-up action | Turns a list of differences into an action list |
-| 5. Subsequent clearance | Deposits in transit and outstanding cheques are traced to the November statement | Tests existence and cut-off of timing items |
+| 5. Subsequent clearance | Deposits in transit and outstanding cheques are traced to the November statement | Preliminary evidence on existence and cut-off; amount-only matches still need deposit slips |
 | 6. Prove | Builds the reconciliation statement and checks adjusted bank = adjusted book | Nil unreconciled difference, or the tool says *INVESTIGATE* |
-| 7. Export | Writes an Excel workpaper with live formulas | A reviewer can trace each number to its source line |
+| 7. Status | Separates the arithmetic result from the audit status | A balance can reconcile while High items are still open |
+| 8. Export | Writes an Excel workpaper with live formulas | A reviewer can trace each number to its source line |
 
 ### Matching logic
 
@@ -42,7 +43,7 @@ The bank statement shows **SGD 259,148.41**, the cash book shows **SGD 268,288.7
 |---|---|---:|---:|---|
 | Deposits in transit | Bank | 2 | 20,500.00 | Timing; one banked 9 days after period end → **cut-off risk** |
 | Outstanding cheques | Bank | 3 | (11,195.00) | Timing; cheque 100239 **still not presented** by 10 Nov |
-| Cheque not issued by the entity | Bank | 1 | 2,750.00 | Outside the cheque book range → **bank error / possible fraud** |
+| Cheque outside the entity's cheque book | Bank | 1 | 2,750.00 | **Provisional**: not proof of a bank error or fraud. Confirm with the bank, cheque image and cheque register |
 | Interest not recorded | Book | 1 | 214.66 | Record interest income |
 | Unidentified receipt | Book | 1 | 5,000.00 | Record to suspense, trace the remitter |
 | Duplicate posting | Book | 1 | 2,400.00 | Reverse the duplicate journal |
@@ -51,7 +52,9 @@ The bank statement shows **SGD 259,148.41**, the cash book shows **SGD 268,288.7
 | Dishonoured cheque | Book | 1 | (3,850.00) | Reinstate the receivable and assess recoverability |
 | Unrecorded GIRO debit | Book | 1 | (960.00) | Obtain the mandate and invoice before recording |
 
-Items at or above the escalation threshold (default SGD 5,000, adjustable), and items such as unidentified receipts or uncleared cheques, are marked **High priority**. Timing items already proven by subsequent clearance are not escalated.
+Items at or above the escalation threshold (default SGD 5,000, adjustable), and items such as unidentified receipts or uncleared cheques, are marked **High priority**. Timing items supported by subsequent clearance are not escalated.
+
+**Reconciled is not the same as concluded.** The balance reconciles arithmetically, but the workpaper reports the audit status as **OPEN ITEMS** while the four High-priority items lack supporting evidence. Reconciling items explain a difference; they do not prove that the explanation is true.
 
 ## The Excel workpaper
 
@@ -72,11 +75,11 @@ Formatting follows a common modelling convention: blue = input, green = link to 
 
 | Assertion | How the tool addresses it |
 |---|---|
-| **Existence** | Deposits in transit are traced to the next bank statement. A receipt that never arrives is flagged. |
+| **Existence** | Deposits in transit are traced to the next bank statement. A receipt that never arrives is flagged. Matches on amount alone are preliminary until agreed to deposit slips. |
 | **Completeness** | Bank-only items (charges, interest, GIRO debits, dishonoured cheques) show what the books are missing. |
 | **Cut-off** | Receipts recorded on 31 Oct but banked more than 5 days later are flagged as possible window dressing. |
 | **Accuracy** | Amount mismatches are flagged, with a divisible-by-9 hint for transposition errors. |
-| **Fraud risk indicators** | Cheques outside the entity's cheque book, unidentified receipts and long-outstanding cheques are escalated. |
+| **Fraud risk indicators** | Cheques outside the entity's cheque book, unidentified receipts and long-outstanding cheques are escalated for investigation, not assumed to be fraud. |
 
 ## How to run
 
@@ -110,7 +113,8 @@ Balance per cash book            268,288.75
 Adjusted book balance            271,203.41
 Unreconciled difference                0.00
 ...
-Status: RECONCILED
+Arithmetic status: RECONCILED
+Audit status: OPEN ITEMS - evidence required (4 open)
 ```
 
 ## Project structure
@@ -126,7 +130,7 @@ bank-reconciliation-automation/
 ├── scripts/
 │   └── generate_sample_data.py
 ├── tests/
-│   └── test_reconcile.py   # 12 tests against the known answer key
+│   └── test_reconcile.py   # 21 tests: answer key, input validation, edge cases
 ├── main.py
 └── requirements.txt
 ```
@@ -134,6 +138,8 @@ bank-reconciliation-automation/
 ## Limitations
 
 - **Rule-based.** Bank-only items are classified by keywords in the bank description, and a real bank's wording would need its own rules.
+- **Subsequent clearance for receipts matches on amount and direction.** That is a lead, not proof; payer details and deposit slips are needed to confirm each item.
+- **Input validation is basic.** Missing columns, bad dates, non-numeric amounts, duplicate references and lines with both debit and credit stop the run, but the tool does not check the data's provenance.
 - **One-to-one matching only.** A single bank deposit covering several receipts (batched deposits) is not yet handled.
 - **The proposed entries are suggestions.** Counter-accounts are mapped by category, and each entry still needs supporting documents and client approval.
 - **Single account and currency.** No foreign-exchange revaluation or multi-account reconciliation.

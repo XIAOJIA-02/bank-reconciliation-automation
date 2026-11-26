@@ -49,7 +49,9 @@ def main():
     print("-" * 64)
     print(f"High-priority items: {s['high_priority_items']}")
     status = "RECONCILED" if abs(s["unreconciled_difference"]) < 0.005 else "DIFFERENCE - INVESTIGATE"
-    print(f"Status: {status}")
+    print(f"Arithmetic status: {status}")
+    audit = "OPEN ITEMS - evidence required" if s["open_items"] else "CONCLUDED"
+    print(f"Audit status: {audit} ({s['open_items']} open)")
     print(f"Workpaper: {wp}")
 
 

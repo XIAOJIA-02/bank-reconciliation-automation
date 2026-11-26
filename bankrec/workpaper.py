@@ -52,12 +52,12 @@ AJE_ACCOUNT = {
     "Book error - duplicate posting": "Software expense (original posting account)",
 }
 
-BANK_ORDER = ["Deposit in transit", "Outstanding cheque", "Unpresented payment", "Bank error / unauthorised cheque"]
+BANK_ORDER = ["Deposit in transit", "Outstanding cheque", "Unpresented payment", "Unverified cheque - outside cheque book"]
 BANK_LABEL = {
     "Deposit in transit": "Add: Deposits in transit",
     "Outstanding cheque": "Less: Outstanding cheques",
     "Unpresented payment": "Less: Unpresented payments",
-    "Bank error / unauthorised cheque": "Add: Bank error - cheque not issued by entity",
+    "Unverified cheque - outside cheque book": "Add: Cheque outside cheque book (provisional)",
 }
 BOOK_ORDER = ["Interest not recorded", "Unidentified receipt", "Book error - duplicate posting",
               "Book error - amount mismatch", "Bank charges not recorded", "Dishonoured cheque",
@@ -177,15 +177,16 @@ def export_workpaper(result: ReconResult, path: Path, preparer: str = "[Your nam
     # ----- Subsequent clearance -----
     cl_ws = wb.create_sheet("Subsequent Clearance")
     cl_cols = ["je_id", "reference", "description", "gl_date", "amount", "category", "cleared_on",
-               "cleared_bank_ref", "days_after_period_end", "status"]
+               "cleared_bank_ref", "days_after_period_end", "status", "evidence_basis"]
     cl_last = _table(cl_ws, result.clearance[cl_cols],
                      ["JE ID", "Reference", "Description", "GL date", "Amount (SGD)", "Category", "Cleared on",
-                      "Nov bank ref", "Days after period end", "Status"],
-                     [9, 13, 42, 12, 13, 20, 12, 13, 11, 13], money_cols=(5,), date_cols=(4, 7))
+                      "Nov bank ref", "Days after period end", "Status", "Evidence basis"],
+                     [9, 13, 42, 12, 13, 20, 12, 13, 11, 13, 34], money_cols=(5,), date_cols=(4, 7))
     cl_ws.conditional_formatting.add(f"J2:J{cl_last}", CellIsRule(operator="equal", formula=['"NOT CLEARED"'],
                                      fill=PatternFill("solid", fgColor="F8CBAD"), font=Font(name=FONT, bold=True, color="9C0006")))
     cl_ws.cell(row=cl_last + 2, column=1, value=(
-        "Procedure: month-end timing items were traced to the 1-10 Nov 2026 bank statement. "
+        "Procedure: month-end timing items were traced to the 1-10 Nov 2026 bank statement. Cheques are matched on "
+        "cheque number; receipts on amount only, which is preliminary evidence to be agreed to deposit slips. "
         "Receipts banked > 5 days after period end are flagged as a cut-off risk.")).font = F_NOTE
 
     # ----- Matched -----
@@ -287,9 +288,15 @@ def export_workpaper(result: ReconResult, path: Path, preparer: str = "[Your nam
     # Proof
     hdr("Proof & integrity checks")
     diff = line("Unreconciled difference (adjusted bank - adjusted book)", f"=C{adj_bank}-C{adj_book}", F_BOLD)
-    ws[f"B{r}"], ws[f"C{r}"] = "Reconciliation status", f'=IF(ABS(C{diff})<0.005,"RECONCILED","INVESTIGATE")'
+    ws[f"B{r}"], ws[f"C{r}"] = "Arithmetic reconciliation", f'=IF(ABS(C{diff})<0.005,"RECONCILED","INVESTIGATE")'
     ws[f"B{r}"].font = F_BASE; ws[f"C{r}"].font = F_BOLD; ws[f"C{r}"].alignment = Alignment(horizontal="right")
     status = r; r += 1
+    ws[f"B{r}"], ws[f"C{r}"] = "Open items requiring evidence (High priority)", f'=COUNTIF({PRI},"High")'
+    ws[f"B{r}"].font = F_BASE; ws[f"C{r}"].font = F_BOLD; ws[f"C{r}"].alignment = Alignment(horizontal="right")
+    open_r = r; r += 1
+    ws[f"B{r}"], ws[f"C{r}"] = "Audit status", f'=IF(C{open_r}>0,"OPEN ITEMS","CONCLUDED")'
+    ws[f"B{r}"].font = F_BASE; ws[f"C{r}"].font = F_BOLD; ws[f"C{r}"].alignment = Alignment(horizontal="right")
+    audit_r = r; r += 1
     ws[f"B{r}"], ws[f"C{r}"] = "Opening bank balance per statement (1 Oct 2026)", cfg["opening_balance_bank"]
     ws[f"B{r}"].font, ws[f"C{r}"].font, ws[f"C{r}"].number_format = F_BASE, F_INPUT, NUM
     bank_open = r; r += 1
@@ -306,6 +313,7 @@ def export_workpaper(result: ReconResult, path: Path, preparer: str = "[Your nam
     ws.conditional_formatting.add(f"C{status}:C{r}", CellIsRule(operator="equal", formula=['"RECONCILED"'], fill=green))
     ws.conditional_formatting.add(f"C{status}:C{r}", CellIsRule(operator="equal", formula=['"OK"'], fill=green))
     ws.conditional_formatting.add(f"C{status}:C{r}", FormulaRule(formula=[f'OR(C{status}="INVESTIGATE",C{status}="CHECK")'], fill=red))
+    ws.conditional_formatting.add(f"C{audit_r}", CellIsRule(operator="equal", formula=['"OPEN ITEMS"'], fill=PatternFill("solid", fgColor="FFE699")))
 
     # Exceptions overview (right-hand panel)
     p = 13
@@ -336,10 +344,11 @@ def export_workpaper(result: ReconResult, path: Path, preparer: str = "[Your nam
 
     r = max(r, p) + 1
     ws[f"B{r}"] = "Conclusion"; ws[f"B{r}"].font = F_BOLD; r += 1
-    ws[f"B{r}"] = (f"Subject to resolution of the high-priority items listed above, the cash book reconciles to the bank "
-                   f"statement with nil unreconciled difference. Book-side items are proposed as adjusting journal entries "
-                   f"(see 'Proposed AJEs'); bank-side items are timing differences except the cheque not issued by the entity, "
-                   f"which is to be raised with the bank.")
+    ws[f"B{r}"] = ("The cash book reconciles arithmetically to the bank statement with nil unreconciled difference. "
+                   "This is not yet an audit conclusion: the high-priority items listed above remain open until supporting "
+                   "evidence is obtained. Book-side items are proposed as adjusting journal entries (see 'Proposed AJEs'). "
+                   "The cheque outside the entity's cheque book is a provisional bank-side item pending the bank's response, "
+                   "and timing items matched on amount only are preliminary until agreed to deposit slips.")
     ws.merge_cells(f"B{r}:F{r}"); ws[f"B{r}"].alignment = Alignment(wrap_text=True, vertical="top")
     ws[f"B{r}"].font = F_BASE; ws.row_dimensions[r].height = 54
     r += 2
